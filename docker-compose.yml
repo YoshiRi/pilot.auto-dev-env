@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  autoware:
+    build: .
+    container_name: pilot-auto-dev
+    network_mode: host
+    ipc: host
+    environment:
+      DISPLAY: ${DISPLAY}
+      CYCLONEDDS_URI: ${CYCLONEDDS_URI}
+      ENABLE_AGNOCAST: "0"
+    volumes:
+      - ~/.Xauthority:/root/.Xauthority
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/autoware_map:/home/autoware/maps
+      - ~/autoware_bag:/home/autoware/bags
+      - mlmodels_data:/opt/autoware/mlmodels
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  autoware_agnocast:
+    extends: autoware
+    container_name: pilot-auto-dev-agnocast
+    environment:
+      ENABLE_AGNOCAST: "1"
+    devices:
+      - /dev/agnocast:/dev/agnocast
+
+volumes:
+  mlmodels_data:
