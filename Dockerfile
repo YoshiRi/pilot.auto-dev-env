@@ -16,7 +16,8 @@ RUN apt-get update && \
 
 # --- ② debug_toolsをリポジトリから取得 ---
 COPY repos/debug_tools.repos /tmp/debug_tools.repos
-RUN mkdir -p /home/${user}/tools/src && \
+RUN --mount=type=ssh  \
+    mkdir -p /home/${user}/tools/src && \
     cd /home/${user}/tools && \
     vcs import src < /tmp/debug_tools.repos || true && \
     chown -R ${user}:${user} /home/${user}/tools

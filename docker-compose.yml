@@ -14,11 +14,11 @@ services:
     volumes:
       - ~/.Xauthority:/root/.Xauthority
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - ~/autoware_map:/home/autoware/maps
-      - ~/autoware_bag:/home/autoware/bags
+      - ~/autoware_map:/home/autoware/autoware_map
+      - ~/autoware_bag:/home/autoware/autoware_bag
       - ${DDS_PATH}:${DDS_PATH}
-      - /opt/autoware:/opt/autoware
-      - mlmodels_data:/opt/autoware/mlmodels
+      - /opt/autoware:/opt/autoware # use your local autoware mlmodels
+      # - mlmodels_data:/opt/autoware/mlmodels # uncomment if you want to use docker volume for mlmodels
     deploy:
       resources:
         reservations:
