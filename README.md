@@ -2,6 +2,18 @@
 
 軽量なDocker + Compose構成でAutoware解析環境を起動するための雛形です。
 
+
+```bash
+# build
+./fix-image.sh <base-image> (<target-image>)
+
+# run (with GPU support)
+./run-dockerimage.sh <your-username>
+```
+
+
+Following comments are now invalid and should be ignored.
+
 ## 🚀 セットアップ手順
 
 ```bash

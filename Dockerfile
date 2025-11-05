@@ -1,22 +1,28 @@
-FROM ros:humble
+# ベースイメージ指定
+ARG base
+FROM ${base}
 
-RUN apt-get update && apt-get install -y \
-    python3-pip python3-vcstool git \
-    colcon-common-extensions \
-    && rm -rf /var/lib/apt/lists/*
+# 変数
+ARG user
+ARG DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /home/autoware/ws
-RUN mkdir -p src
+USER root
 
-COPY repos/debug_tools.repos .
+# --- ① nvidia関連をpurge ---
+RUN apt-get update && \
+    apt-get remove -y --purge '^nvidia-.*' && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN vcs import src < debug_tools.repos
+# --- ② debug_toolsをリポジトリから取得 ---
+COPY repos/debug_tools.repos /tmp/debug_tools.repos
+RUN mkdir -p /home/${user}/tools/src && \
+    cd /home/${user}/tools && \
+    vcs import src < /tmp/debug_tools.repos || true && \
+    chown -R ${user}:${user} /home/${user}/tools
 
-RUN apt-get update && rosdep install -y --from-paths src --ignore-src -r \
-    && rm -rf /var/lib/apt/lists/*
+# --- ③ ユーザに戻す ---
+USER ${user}
 
-ENV ROS_DISTRO=humble
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-
-CMD ["/bin/bash"]
+# --- ④ 起動時に環境を自動source ---
+RUN echo '[ -f /home/${user}/autoware.proj/install/setup.bash ] && source /home/${user}/autoware.proj/install/setup.bash' >> /home/${user}/.bashrc
