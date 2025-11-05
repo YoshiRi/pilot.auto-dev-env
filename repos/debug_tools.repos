@@ -1,5 +1,5 @@
 repositories:
   debug_tools:
     type: git
-    url: https://github.com/tier4/debug_tools.git
+    url: git@github.com:tier4/debug_tools.git
     version: main

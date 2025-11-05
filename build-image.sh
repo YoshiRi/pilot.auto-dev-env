@@ -20,11 +20,12 @@ echo "🎯 Target image: $target_image"
 tmp_tag="${target_image}_tmp_$(date +%s)"
 
 # --- ビルド ---
-docker build \
+DOCKER_BUILDKIT=1 docker build \
+  --ssh default \
   -t "$tmp_tag" \
   --build-arg base="$source_image" \
   --build-arg user="$user" \
-  .
+  . 
 
 # --- targetがsourceと同じならreplaceモード ---
 if [ "$target_image" = "$source_image" ]; then

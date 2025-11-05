@@ -5,7 +5,7 @@
 
 ```bash
 # build
-./fix-image.sh <base-image> (<target-image>)
+./build-image.sh <base-image> (<target-image>)
 
 # run (with GPU support)
 ./run-dockerimage.sh <your-username>

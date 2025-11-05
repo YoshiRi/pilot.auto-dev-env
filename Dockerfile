@@ -14,13 +14,17 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+# github.com のホスト鍵を登録
+RUN mkdir -p /root/.ssh && \
+ssh-keyscan github.com >> /root/.ssh/known_hosts
+
 # --- ② debug_toolsをリポジトリから取得 ---
 COPY repos/debug_tools.repos /tmp/debug_tools.repos
 RUN --mount=type=ssh  \
-    mkdir -p /home/${user}/tools/src && \
-    cd /home/${user}/tools && \
-    vcs import src < /tmp/debug_tools.repos || true && \
-    chown -R ${user}:${user} /home/${user}/tools
+    mkdir -p /home/${user}/autoware.proj/tools && \
+    cd /home/${user}/autoware.proj && \
+    vcs import tools < /tmp/debug_tools.repos && \
+    chown -R ${user}:${user} /home/${user}/autoware.proj/tools
 
 # --- ③ ユーザに戻す ---
 USER ${user}
