@@ -3,7 +3,16 @@
 軽量なDocker + Compose構成でAutoware解析環境を起動するための雛形です。
 
 
+Usage:
+
 ```bash
+# clone
+git clone https://github.com/<your-username>/pilot.auto-dev-env.git
+cd pilot.auto-dev-env
+
+# Download image
+webauto ci firmware-image pull --project-id <id> --firmware-image-id <image-id> --docker-image <base-image>
+
 # build
 ./build-image.sh <base-image> (<target-image>)
 
@@ -11,46 +20,21 @@
 ./run-dockerimage.sh <your-username>
 ```
 
+### setup
 
-Following comments are now invalid and should be ignored.
-
-## 🚀 セットアップ手順
-
-```bash
-git clone https://github.com/<your-username>/pilot.auto-dev-env.git
-cd pilot.auto-dev-env
-docker compose up --build
-```
-
-## 🧩 構成概要
-ファイル	役割
-Dockerfile	ROS2環境とdebug_toolsを含むベースイメージ
-docker-compose.yml	GPU/agnocast対応の起動設定
-repos/debug_tools.repos	vcs import定義
-scripts/	ツール導入・Autoware起動などの補助スクリプト
-
-## 🛠️ 拡張案
-.devcontainer/ を追加してVSCode統合
-
-repos/perception.repos など他のAutowareモジュールを追加
-
-install_tools.sh に解析ツール（Foxglove等）を追加
+You may follow https://github.com/amadeuszsz/autoware_vscode/blob/main/README.md
 
 ```
-=== 9. Git初期化とコミット ===
+# Clone this repository
+sudo apt -y update && sudo apt -y install git
+git clone https://github.com/amadeuszsz/autoware_vscode.git ~/autoware_vscode
 
-git init
-git add .
-git commit -m "Initial commit: minimal Pilot Auto dev environment"
-git branch -M main
-
-=== 10. push ===
-git push -u origin main
-
+# Install dependencies using Ansible (recommended)
+sudo apt purge ansible
+sudo apt -y update && sudo apt -y install pipx
+python3 -m pipx ensurepath
+pipx install --include-deps --force "ansible==6.*"
+pipx ensurepath && source ~/.bashrc
+cd ~/autoware_vscode && ansible-galaxy collection install -f -r "ansible-galaxy-requirements.yaml"
+ansible-playbook autoware_vscode.dev_env.setup_host -K
 ```
----
-
-💡 **ポイント**
-- GitHubは`.`（ドット）を含むリポジトリ名も許可しているので問題ありません。  
-- clone時は `git clone https://github.com/<your-username>/pilot.auto-dev-env.git` のようにピリオド入りでOK。  
-- VSCodeなどでも問題なく開けます。
