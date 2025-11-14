@@ -1,13 +1,38 @@
 #!/bin/bash
 set -e
 
-# --- 引数チェック ---
-image=${1:?Usage: $0 <image_name>}
+# --- Usage ---
+usage() {
+  echo "Usage: $0 <image_name> [--no-agnocast]"
+  echo "  <image_name>      : Docker image name"
+  echo "  --no-agnocast     : Start autoware_no_agnocast instead of autoware"
+  exit 1
+}
 
-# --- CYCLONEDDS_URI が環境にあるか確認 ---
+# --- 引数チェック ---
+[ -z "$1" ] && usage
+image="$1"
+shift
+
+# --- サービス切り替え ---
+service="autoware"  # default
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-agnocast)
+      service="autoware_no_agnocast"
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      ;;
+  esac
+  shift
+done
+
+# --- CYCLONEDDS_URI 確認 ---
 if [ -z "$CYCLONEDDS_URI" ]; then
-  echo "❌ Error: CYCLONEDDS_URI environment variable is not set."
-  echo "Please run: export CYCLONEDDS_URI=file:///path/to/cyclonedds.xml"
+  echo "❌ Error: CYCLONEDDS_URI is not set."
+  echo "Please export: CYCLONEDDS_URI=file:///path/to/cyclonedds.xml"
   exit 1
 fi
 
@@ -16,13 +41,16 @@ dds_path=$(echo "$CYCLONEDDS_URI" | sed 's|^file://||')
 
 echo "🚀 Starting Autoware via docker compose"
 echo "  Image: ${image}"
+echo "  Service: ${service}"
 echo "  CYCLONEDDS_URI: ${CYCLONEDDS_URI}"
 echo "  DDS_PATH: ${dds_path}"
 
-# --- compose に渡す環境変数を設定 ---
+# --- compose 環境変数設定 ---
 export IMAGE_NAME="$image"
 export DDS_PATH="$dds_path"
 
-# --- docker-compose.yml に設定された autoware サービスを起動 ---
-docker compose run --rm -it autoware
+# --- 古いコンテナを消してから起動（必須） ---
+docker compose down --remove-orphans
 
+# --- 起動 ---
+docker compose run --rm -it "$service"

@@ -20,6 +20,10 @@ webauto ci firmware-image pull --project-id <id> --firmware-image-id <image-id> 
 ./run-dockerimage.sh <your-username>
 ```
 
+### option
+
+`./run-dockerimage.sh` スクリプトのオプション: `--no-agnocast` を指定すると、`/dev/agnocast` デバイスをコンテナにマウントしません。
+
 ### setup
 
 You may follow https://github.com/amadeuszsz/autoware_vscode/blob/main/README.md
