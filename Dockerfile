@@ -29,5 +29,10 @@ RUN --mount=type=ssh  \
 # --- ③ ユーザに戻す ---
 USER ${user}
 
+# --- ③ ccache用ディレクトリ作成 --- (build時キャッシュ用)
+ENV CCACHE_DIR=/home/${user}/.ccache
+RUN mkdir -p /home/${user}/.ccache && \
+    chown -R ${user}:${user} /home/${user}/.ccache
+
 # --- ④ 起動時に環境を自動source ---
 RUN echo '[ -f /home/${user}/autoware.proj/install/setup.bash ] && source /home/${user}/autoware.proj/install/setup.bash' >> /home/${user}/.bashrc
