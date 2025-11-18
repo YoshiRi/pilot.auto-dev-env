@@ -1,57 +1,51 @@
 version: "3.9"
 
+# ===========================
+#  共通設定（YAMLアンカー）
+# ===========================
+x-common: &autoware_base
+  image: ${IMAGE_NAME:-debug_new_streampetr}
+  network_mode: host
+  ipc: host
+  environment:
+    DISPLAY: ${DISPLAY}
+    CYCLONEDDS_URI: ${CYCLONEDDS_URI}
+  volumes:
+    - ~/.Xauthority:/root/.Xauthority
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - ~/autoware_map:/home/autoware/autoware_map
+    - ~/autoware_bag:/home/autoware/autoware_bag
+    - ${DDS_PATH}:${DDS_PATH}
+    - /opt/autoware:/opt/autoware
+    - ~/.webauto:/home/autoware/.webauto
+    # - mlmodels_data:/opt/autoware/mlmodels
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - capabilities: [gpu]
+  command: ["/bin/bash", "-ic", "source /home/autoware/autoware.proj/install/setup.bash && exec bash"]
+
 services:
-  # --- Agnocast 有効版 ---
+  # ===========================
+  #  Agnocast 有効版
+  # ===========================
   autoware:
-    image: ${IMAGE_NAME:-debug_new_streampetr}
+    <<: *autoware_base
     container_name: pilot-auto-dev
-    network_mode: host
-    ipc: host
-    environment:
-      DISPLAY: ${DISPLAY}
-      CYCLONEDDS_URI: ${CYCLONEDDS_URI}
     devices:
       - /dev/agnocast:/dev/agnocast
-    volumes:
-      - ~/.Xauthority:/root/.Xauthority
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - ~/autoware_map:/home/autoware/autoware_map
-      - ~/autoware_bag:/home/autoware/autoware_bag
-      - ${DDS_PATH}:${DDS_PATH}
-      - /opt/autoware:/opt/autoware
-      # - mlmodels_data:/opt/autoware/mlmodels
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    command: ["/bin/bash", "-ic", "source /home/autoware/autoware.proj/install/setup.bash && exec bash"]
 
-  # --- Agnocast 無効版 ---
+  # ===========================
+  #  Agnocast 無効版
+  # ===========================
   autoware_no_agnocast:
-    image: ${IMAGE_NAME:-debug_new_streampetr}
+    <<: *autoware_base
     container_name: pilot-auto-dev-no-agnocast
-    network_mode: host
-    ipc: host
     environment:
-      DISPLAY: ${DISPLAY}
-      CYCLONEDDS_URI: ${CYCLONEDDS_URI}
-      ENABLE_AGNOCAST: 0
-    # ※ /dev/agnocast を削除
-    volumes:
-      - ~/.Xauthority:/root/.Xauthority
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - ~/autoware_map:/home/autoware/autoware_map
-      - ~/autoware_bag:/home/autoware/autoware_bag
-      - ${DDS_PATH}:${DDS_PATH}
-      - /opt/autoware:/opt/autoware
-      # - mlmodels_data:/opt/autoware/mlmodels
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    command: ["/bin/bash", "-ic", "source /home/autoware/autoware.proj/install/setup.bash && exec bash"]
+      ENABLE_AGNOCAST: 0   # 差分だけ記述
+    # devices を完全削除する
+    devices: []
 
 volumes:
   mlmodels_data:
