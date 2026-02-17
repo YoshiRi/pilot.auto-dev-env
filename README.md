@@ -18,6 +18,9 @@ webauto ci firmware-image pull --project-id <id> --firmware-image-id <image-id> 
 
 # run (with GPU support)
 ./run-dockerimage.sh <your-username>
+
+# enter container with fzf selection
+./enter_autoware_container.sh
 ```
 
 ### option
