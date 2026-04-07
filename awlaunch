@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="/opt/autoware/config"
+AUTOWARE_ROOT="/home/autoware"
+DEFAULT_CONFIG="${CONFIG_DIR}/default.env"
+
+write_default_config() {
+  cat >"${DEFAULT_CONFIG}" <<'EOF'
+MAP_PATH=/home/autoware/autoware_map/shiojiri_lv4
+VEHICLE_MODEL=j6_gen2
+SENSOR_MODEL=aip_x2_gen2
+VEHICLE_ID=j6_gen2_12
+LOCALIZATION=false
+SENSING=true
+PERCEPTION=true
+MAP=true
+PLANNING=false
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Error: '$1' is required." >&2
+    exit 1
+  fi
+}
+
+select_config() {
+  find "${CONFIG_DIR}" -maxdepth 1 -type f -name '*.env' -printf '%f\n' | sort | \
+    fzf \
+      --prompt='Select config: ' \
+      --height=40% \
+      --layout=reverse \
+      --border \
+      --preview="cat '${CONFIG_DIR}/{}'"
+}
+
+find_setup_bash() {
+  find "${AUTOWARE_ROOT}" -maxdepth 3 -name setup.bash 2>/dev/null | head -n 1
+}
+
+main() {
+  require_command fzf
+
+  mkdir -p "${CONFIG_DIR}"
+  if [[ ! -f "${DEFAULT_CONFIG}" ]]; then
+    write_default_config
+  fi
+
+  local config_name config_path setup_bash
+  config_name="$(select_config)" || exit 1
+  config_path="${CONFIG_DIR}/${config_name}"
+
+  setup_bash="$(find_setup_bash)"
+  if [[ -z "${setup_bash}" ]]; then
+    echo "Error: setup.bash not found under ${AUTOWARE_ROOT}" >&2
+    exit 1
+  fi
+
+  if [[ -f /opt/ros/humble/setup.bash ]]; then
+    # Ensure the base ROS environment exists before overlaying Autoware.
+    # shellcheck disable=SC1091
+    source /opt/ros/humble/setup.bash
+  fi
+
+  # shellcheck disable=SC1090
+  source "${setup_bash}"
+
+  require_command ros2
+
+  set -a
+  # shellcheck disable=SC1090
+  source "${config_path}"
+  set +a
+
+  exec ros2 launch autoware_launch logging_simulator.launch.xml \
+    map_path:="${MAP_PATH}" \
+    vehicle_model:="${VEHICLE_MODEL}" \
+    sensor_model:="${SENSOR_MODEL}" \
+    vehicle_id:="${VEHICLE_ID}" \
+    localization:="${LOCALIZATION}" \
+    sensing:="${SENSING}" \
+    perception:="${PERCEPTION}" \
+    map:="${MAP}" \
+    planning:="${PLANNING}"
+}
+
+main "$@"

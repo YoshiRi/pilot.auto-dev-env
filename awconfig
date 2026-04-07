@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="/opt/autoware/config"
+DEFAULT_CONFIG="${CONFIG_DIR}/default.env"
+
+write_default_config() {
+  cat >"${DEFAULT_CONFIG}" <<'EOF'
+MAP_PATH=/home/autoware/autoware_map/shiojiri_lv4
+VEHICLE_MODEL=j6_gen2
+SENSOR_MODEL=aip_x2_gen2
+VEHICLE_ID=j6_gen2_12
+LOCALIZATION=false
+SENSING=true
+PERCEPTION=true
+MAP=true
+PLANNING=false
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Error: '$1' is required." >&2
+    exit 1
+  fi
+}
+
+choose_from_list() {
+  local prompt="$1"
+  local current="${2:-}"
+  shift 2
+  local options=("$@")
+  local input
+
+  input="$(
+    {
+      if [[ -n "${current}" ]]; then
+        printf '%s\n' "${current}"
+      fi
+      printf '%s\n' "${options[@]}"
+    } | awk '!seen[$0]++' | fzf --prompt="${prompt}: " --height=40% --layout=reverse --border
+  )" || return 1
+
+  printf '%s\n' "${input}"
+}
+
+prompt_text() {
+  local prompt="$1"
+  local current="${2:-}"
+  local value
+
+  if [[ -n "${current}" ]]; then
+    read -r -p "${prompt} [${current}]: " value
+    printf '%s\n' "${value:-${current}}"
+  else
+    read -r -p "${prompt}: " value
+    printf '%s\n' "${value}"
+  fi
+}
+
+load_config() {
+  local config_path="$1"
+  if [[ -f "${config_path}" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${config_path}"
+    set +a
+  fi
+}
+
+main() {
+  require_command fzf
+  mkdir -p "${CONFIG_DIR}"
+  if [[ ! -f "${DEFAULT_CONFIG}" ]]; then
+    write_default_config
+  fi
+
+  local selection config_name config_path
+  selection="$(
+    {
+      find "${CONFIG_DIR}" -maxdepth 1 -type f -name '*.env' -printf '%f\n' | sort
+      printf '[NEW]\n'
+    } | fzf \
+      --prompt='Select config: ' \
+      --height=40% \
+      --layout=reverse \
+      --border \
+      --preview="if [ {} = '[NEW]' ]; then echo 'Create a new config'; else cat '${CONFIG_DIR}/{}'; fi"
+  )" || exit 1
+
+  if [[ "${selection}" == "[NEW]" ]]; then
+    config_name="$(prompt_text "Config name" "")"
+    config_name="${config_name%.env}.env"
+    config_path="${CONFIG_DIR}/${config_name}"
+    if [[ -f "${DEFAULT_CONFIG}" ]]; then
+      load_config "${DEFAULT_CONFIG}"
+    fi
+  else
+    config_name="${selection}"
+    config_path="${CONFIG_DIR}/${config_name}"
+    load_config "${config_path}"
+  fi
+
+  MAP_PATH="$(prompt_text "Map path" "${MAP_PATH:-/home/autoware/autoware_map/shiojiri_lv4}")"
+  VEHICLE_MODEL="$(choose_from_list "Vehicle model" "${VEHICLE_MODEL:-j6_gen2}" "j6_gen2" "j6_gen3" "lexus")"
+  SENSOR_MODEL="$(choose_from_list "Sensor model" "${SENSOR_MODEL:-aip_x2_gen2}" "aip_x2_gen2" "aip_x3_gen1")"
+  VEHICLE_ID="$(prompt_text "Vehicle ID" "${VEHICLE_ID:-j6_gen2_12}")"
+  LOCALIZATION="$(choose_from_list "Localization" "${LOCALIZATION:-false}" "true" "false")"
+  SENSING="$(choose_from_list "Sensing" "${SENSING:-true}" "true" "false")"
+  PERCEPTION="$(choose_from_list "Perception" "${PERCEPTION:-true}" "true" "false")"
+  MAP="$(choose_from_list "Map" "${MAP:-true}" "true" "false")"
+  PLANNING="$(choose_from_list "Planning" "${PLANNING:-false}" "true" "false")"
+
+  tmp_file="$(mktemp)"
+  cat >"${tmp_file}" <<EOF
+MAP_PATH=${MAP_PATH}
+VEHICLE_MODEL=${VEHICLE_MODEL}
+SENSOR_MODEL=${SENSOR_MODEL}
+VEHICLE_ID=${VEHICLE_ID}
+LOCALIZATION=${LOCALIZATION}
+SENSING=${SENSING}
+PERCEPTION=${PERCEPTION}
+MAP=${MAP}
+PLANNING=${PLANNING}
+EOF
+
+  mv "${tmp_file}" "${config_path}"
+  echo "Saved ${config_path}"
+}
+
+main "$@"
