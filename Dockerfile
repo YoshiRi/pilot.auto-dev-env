@@ -14,6 +14,13 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+# --- ①-2 fzfと設定ディレクトリを追加 ---
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends fzf && \
+    mkdir -p /opt/autoware/config && \
+    chown -R ${user}:${user} /opt/autoware && \
+    rm -rf /var/lib/apt/lists/*
+
 # github.com のホスト鍵を登録
 RUN mkdir -p /root/.ssh && \
 ssh-keyscan github.com >> /root/.ssh/known_hosts
@@ -26,6 +33,13 @@ RUN --mount=type=ssh  \
     vcs import tools < /tmp/debug_tools.repos && \
     chown -R ${user}:${user} /home/${user}/autoware.proj/tools
 
+# --- ②-2 Autoware起動補助CLIを配置 ---
+COPY awlaunch /usr/local/bin/awlaunch
+COPY awconfig /usr/local/bin/awconfig
+COPY default.env /opt/autoware/config/default.env
+RUN chmod +x /usr/local/bin/awlaunch /usr/local/bin/awconfig && \
+    chown ${user}:${user} /opt/autoware/config/default.env
+
 # --- ③ ユーザに戻す ---
 USER ${user}
 
@@ -33,6 +47,3 @@ USER ${user}
 ENV CCACHE_DIR=/home/${user}/.ccache
 RUN mkdir -p /home/${user}/.ccache && \
     chown -R ${user}:${user} /home/${user}/.ccache
-
-# --- ④ 起動時に環境を自動source ---
-RUN echo '[ -f /home/${user}/autoware.proj/install/setup.bash ] && source /home/${user}/autoware.proj/install/setup.bash' >> /home/${user}/.bashrc
