@@ -27,7 +27,7 @@ x-common: &autoware_base
       reservations:
         devices:
           - capabilities: [gpu]
-  command: ["/bin/bash", "-ic", "source /home/autoware/autoware.proj/install/setup.bash && exec bash"]
+  command: ["/bin/bash", "-ic", "exec bash"]
 
 services:
   # ===========================
