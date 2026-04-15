@@ -3,16 +3,13 @@ version: "3.9"
 # ===========================
 #  共通設定（YAMLアンカー）
 # ===========================
-x-autoware-env: &autoware_env
-  DISPLAY: ${DISPLAY}
-  CYCLONEDDS_URI: ${CYCLONEDDS_URI}
-
 x-common: &autoware_base
   image: ${IMAGE_NAME:-debug_new_streampetr}
   network_mode: host
   ipc: host
   environment:
-    <<: *autoware_env
+    DISPLAY: ${DISPLAY}
+    CYCLONEDDS_URI: ${CYCLONEDDS_URI}
   volumes:
     - ~/.Xauthority:/root/.Xauthority
     - /tmp/.X11-unix:/tmp/.X11-unix
@@ -46,7 +43,6 @@ services:
     <<: *autoware_base
     container_name: pilot-auto-dev-no-agnocast
     environment:
-      <<: *autoware_env
       ENABLE_AGNOCAST: 0   # 差分だけ記述
     # devices を完全削除する
     devices: []
