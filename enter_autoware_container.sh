@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 echo "Select autoware container to enter:"
 
-CONTAINER=$(docker ps --format '{{.Names}}' | grep autoware-run | fzf --prompt="> ")
+CONTAINER_CANDIDATES=$(docker ps --format '{{.Names}}\t{{.Image}}' \
+  | awk -F'\t' 'tolower($1) ~ /autoware/ || tolower($2) ~ /autoware/ { print }')
+
+if [ -z "$CONTAINER_CANDIDATES" ]; then
+  echo "No running Autoware container found."
+  exit 1
+fi
+
+SELECTED=$(printf '%s\n' "$CONTAINER_CANDIDATES" | fzf --prompt="> ")
+CONTAINER=$(printf '%s\n' "$SELECTED" | cut -f1)
 
 if [ -z "$CONTAINER" ]; then
   echo "No container selected. Exit."
